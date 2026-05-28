@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoPredict - Panel de Control</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --eco-green: #2a9d8f; --tech-blue: #0d2c54; --light-bg: #f4f6f9; }
+        body { background-color: var(--light-bg); font-family: 'Segoe UI', sans-serif; }
+        .navbar-custom { background-color: var(--tech-blue); }
+        .card-custom { border-radius: 12px; border: none; box-shadow: 0 4px 16px rgba(0,0,0,0.05); background: white; }
+        .btn-eco { background-color: var(--eco-green); color: white; border: none; }
+        .btn-eco:hover { background-color: #21867a; color: white; }
+        .alert-eco { background-color: #e8f5e9; border-left: 5px solid var(--eco-green); color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom px-4 shadow-sm">
+        <a class="navbar-brand fw-bold text-success" href="#">Eco<span class="text-white">Predict</span></a>
+        <div class="ms-auto">
+            <span class="text-white-50 me-3"><i class="bi bi-person-circle me-1"></i> Panel Usuario</span>
+            <a href="login.html" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-left"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <div class="row">
+            
+            <div class="col-12 col-lg-4 mb-4">
+                <div class="card card-custom p-4">
+                    <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-file-earmark-plus me-2"></i>Capturar Recibo CFE</h5>
+                    <form id="reciboForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Consumo del Periodo (kWh)</label>
+                            <input type="number" id="kwh" class="form-control" placeholder="Ej. 350" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Costo Total ($ MXN)</label>
+                            <input type="number" id="costo" class="form-control" placeholder="Ej. 740" required>
+                        </div>
+                        <button type="submit" class="btn btn-eco w-100 fw-bold"><i class="bi bi-plus-lg me-1"></i> Agregar Historial</button>
+                    </form>
+                </div>
+
+                <div class="card card-custom p-4 mt-4">
+                    <h5 class="fw-bold mb-3 text-success"><i class="bi bi-lightbulb me-2"></i>Sugerencias de Eficiencia</h5>
+                    <div class="alert alert-eco small mb-2">
+                        💡 <strong>Aparatos Vampiro:</strong> Desconecta pantallas y cargadores cuando no los utilices para reducir un 10% el consumo pasivo.
+                    </div>
+                    <div class="alert alert-eco small mb-0">
+                        🧺 <strong>Línea Blanca:</strong> Utiliza la lavadora con cargas completas y agua fría para optimizar los ciclos de potencia.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8 mb-4">
+                <div class="card card-custom p-4 mb-4">
+                    <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-graph-up-arrow me-2"></i>Análisis Analítico y Proyección Predictiva</h5>
+                    <div style="position: relative; height:300px; width:100%">
+                        <canvas id="canvasConsumo"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card card-custom p-4 bg-light border-start border-warning border-4">
+                    <h6 class="fw-bold text-dark m-0"><i class="bi bi-cpu me-2 text-warning"></i>Estado de la Próxima Estimación (Motor IA):</h6>
+                    <p class="text-muted small mt-1 mb-0" id="txtPrediccion">Captura datos para que el motor matemático dibuje la tendencia esperada en tu vivienda.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // CAMBIO TOTAL AQUÍ: Lógica dinámica conectada al backend de Recibos
+        const idUsuario = localStorage.getItem('idUsuario');
+        const nombreUsuario = localStorage.getItem('nombreUsuario');
+
+        // Control de acceso básico
+        if (!idUsuario) {
+            window.location.href = 'login.html';
+        }
+
+        if(nombreUsuario) {
+            document.querySelector('.text-white-50').innerHTML = `<i class="bi bi-person-circle me-1"></i> ${nombreUsuario}`;
+        }
+
+        document.querySelector('a[href="login.html"]').addEventListener('click', () => {
+            localStorage.clear();
+        });
+
+        const ctx = document.getElementById('canvasConsumo').getContext('2d');
+        let miGrafica;
+
+        function inicializarGrafica(labels, datos) {
+            if (miGrafica) { miGrafica.destroy(); }
+            miGrafica = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Historial e Inteligencia Artificial (kWh)',
+                        data: datos,
+                        borderColor: '#2a9d8f',
+                        backgroundColor: 'rgba(42, 157, 143, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        async function cargarHistorial() {
+            try {
+                const res = await fetch(`http://localhost:8080/api/recibos/usuario/${idUsuario}`);
+                if (res.ok) {
+                    const historial = await res.json();
+                    
+                    let labels = historial.map((r, index) => `Bimestre ${index + 1}`);
+                    let datos = historial.map(r => r.kwh);
+
+                    if(datos.length > 0) {
+                        labels.push('Predicción IA');
+                        const ultimoValor = datos[datos.length - 1];
+                        datos.push(ultimoValor * 1.1); // Incremento proyectado simulado del 10%
+                        
+                        document.getElementById('txtPrediccion').innerText = `Tendencia calculada. Próximo consumo estimado en tu vivienda: ${(ultimoValor * 1.1).toFixed(1)} kWh.`;
+                    }
+
+                    inicializarGrafica(labels, datos);
+                }
+            } catch (err) {
+                console.error("Error al obtener historial", err);
+            }
+        }
+
+        document.getElementById('reciboForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const kwh = parseInt(document.getElementById('kwh').value);
+            const costo = parseFloat(document.getElementById('costo').value);
+
+            try {
+                const respuesta = await fetch('http://localhost:8080/api/recibos/guardar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idUsuario: parseInt(idUsuario), kwh, costo })
+                });
+
+                if (respuesta.ok) {
+                    alert('¡Recibo agregado con éxito a la base de datos SQL!');
+                    document.getElementById('reciboForm').reset();
+                    cargarHistorial(); 
+                } else {
+                    alert('Error al registrar el recibo en el servidor.');
+                }
+            } catch (error) {
+                alert('No se pudo establecer conexión con el backend.');
+            }
+        });
+
+        cargarHistorial();
+    </script>
+</body>
+</html>

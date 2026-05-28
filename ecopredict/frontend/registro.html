@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoPredict - Registro de Usuario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --eco-green: #2a9d8f;
+            --eco-green-hover: #21867a;
+            --tech-blue: #0d2c54;
+            --light-bg: #a3e4db;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card-custom {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-eco {
+            background-color: var(--eco-green);
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-eco:hover {
+            background-color: var(--eco-green-hover);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .text-tech {
+            color: var(--tech-blue);
+        }
+
+        .form-control:focus {
+            border-color: var(--eco-green);
+            box-shadow: 0 0 0 0.25rem rgba(42, 157, 143, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container d-flex justify-content-center align-items-center min-vh-100 my-5">
+        <div class="card card-custom p-4 col-12 col-md-8 col-lg-6">
+            
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-success m-0">Eco<span class="text-tech">Predict</span></h2>
+                <p class="text-muted small">Menos sorpresas. Más energía limpia.</p>
+                <h5 class="text-secondary mt-2 fw-semibold">Crear una cuenta nueva</h5>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <form id="registroForm">
+                
+                <div class="mb-3">
+                    <label for="nombre" class="form-label fw-medium text-secondary">Nombre Completo</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted"><i class="bi bi-person"></i></span>
+                        <input type="text" id="nombre" class="form-control" placeholder="Ej. Juan Lopez" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="correo" class="form-label fw-medium text-secondary">Correo Electrónico</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted"><i class="bi bi-envelope"></i></span>
+                        <input type="email" id="correo" class="form-control" placeholder="nombre@correo.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="contrasena" class="form-label fw-medium text-secondary">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="contrasena" class="form-control" placeholder="Crea una contraseña segura" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="numHabitantes" class="form-label fw-medium text-secondary">Número de Habitantes en el Hogar</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted"><i class="bi bi-house-door"></i></span>
+                        <input type="number" id="numHabitantes" class="form-control" min="1" value="1" required>
+                    </div>
+                    <div class="form-text">Este dato nos ayuda a ajustar las sugerencias analíticas de consumo.</div>
+                </div>
+
+                <button type="submit" class="btn btn-eco w-100 py-2.5 fw-bold mb-3 shadow-sm">
+                    <i class="bi bi-shield-check me-2"></i>Registrarme de forma segura
+                </button>
+
+                <div class="text-center">
+                    <span class="text-muted small">¿Ya tienes una cuenta? </span>
+                    <a href="#" class="small text-success fw-bold text-decoration-none">Inicia sesión aquí</a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registroForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita que la página se recargue automáticamente
+
+            // 1. Obtener los valores que el usuario escribió
+            const nombre = document.getElementById('nombre').value;
+            const correo = document.getElementById('correo').value;
+            const contrasena = document.getElementById('contrasena').value;
+            const numHabitantes = parseInt(document.getElementById('numHabitantes').value);
+
+            const alertContainer = document.getElementById('alertContainer');
+
+            // 2. Estructurar el objeto JSON exactamente como lo espera tu UsuarioDTO en Java
+            const datosUsuario = {
+                nombre: nombre,
+                correo: correo,
+                contrasena: contrasena,
+                numHabitantes: numHabitantes
+            };
+
+            try {
+                // 3. Hacer la petición POST asíncrona hacia el controlador de Spring Boot
+                // Nota: Reemplaza "localhost:8080" por la dirección IP/Puerto de tu servidor local
+                const respuesta = await fetch('http://localhost:8080/api/auth/registrar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosUsuario)
+                });
+
+                const textoRespuesta = await respuesta.text();
+
+                // 4. Analizar la respuesta del Backend e informar al usuario en pantalla
+                if (respuesta.status === 201) {
+                    // Éxito total (Prueba FUNC-01 cumplida)
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i> <strong>¡Registro Exitoso!</strong> ${textoRespuesta}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.getElementById('registroForm').reset(); // Limpia los campos del formulario
+                } else if (respuesta.status === 409) {
+                    // El correo ya existía en la DB SQL
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Atención:</strong> ${textoRespuesta}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                } else {
+                    // Errores de validación de campos vacíos u otros fallos
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-x-circle-fill me-2"></i> <strong>Error:</strong> ${textoRespuesta}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                // El backend está apagado o hay problemas de red
+                alertContainer.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-wifi-off me-2"></i> <strong>Error de conexión:</strong> No se pudo establecer comunicación con el servidor de EcoPredict. Asegúrate de que el Backend esté corriendo.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
