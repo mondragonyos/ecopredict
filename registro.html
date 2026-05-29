@@ -103,7 +103,7 @@
 
                 <div class="text-center">
                     <span class="text-muted small">¿Ya tienes una cuenta? </span>
-                    <a href="#" class="small text-success fw-bold text-decoration-none">Inicia sesión aquí</a>
+                    <a href="index.html" class="small text-success fw-bold text-decoration-none">Inicia sesión aquí</a>
                 </div>
             </form>
 
@@ -112,9 +112,8 @@
 
     <script>
         document.getElementById('registroForm').addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evita que la página se recargue automáticamente
+            e.preventDefault(); 
 
-            // 1. Obtener los valores que el usuario escribió
             const nombre = document.getElementById('nombre').value;
             const correo = document.getElementById('correo').value;
             const contrasena = document.getElementById('contrasena').value;
@@ -122,7 +121,6 @@
 
             const alertContainer = document.getElementById('alertContainer');
 
-            // 2. Estructurar el objeto JSON exactamente como lo espera tu UsuarioDTO en Java
             const datosUsuario = {
                 nombre: nombre,
                 correo: correo,
@@ -131,8 +129,6 @@
             };
 
             try {
-                // 3. Hacer la petición POST asíncrona hacia el controlador de Spring Boot
-                // Nota: Reemplaza "localhost:8080" por la dirección IP/Puerto de tu servidor local
                 const respuesta = await fetch('http://localhost:8080/api/auth/registrar', {
                     method: 'POST',
                     headers: {
@@ -143,18 +139,15 @@
 
                 const textoRespuesta = await respuesta.text();
 
-                // 4. Analizar la respuesta del Backend e informar al usuario en pantalla
                 if (respuesta.status === 201) {
-                    // Éxito total (Prueba FUNC-01 cumplida)
                     alertContainer.innerHTML = `
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <i class="bi bi-check-circle-fill me-2"></i> <strong>¡Registro Exitoso!</strong> ${textoRespuesta}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     `;
-                    document.getElementById('registroForm').reset(); // Limpia los campos del formulario
+                    document.getElementById('registroForm').reset(); 
                 } else if (respuesta.status === 409) {
-                    // El correo ya existía en la DB SQL
                     alertContainer.innerHTML = `
                         <div class="alert alert-warning alert-dismissible fade show" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Atención:</strong> ${textoRespuesta}
@@ -162,7 +155,6 @@
                         </div>
                     `;
                 } else {
-                    // Errores de validación de campos vacíos u otros fallos
                     alertContainer.innerHTML = `
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="bi bi-x-circle-fill me-2"></i> <strong>Error:</strong> ${textoRespuesta}
@@ -172,13 +164,23 @@
                 }
 
             } catch (error) {
-                // El backend está apagado o hay problemas de red
+                // MODO DEMOSTRACIÓN PARA GITHUB PAGES:
+                // Como no detecta el backend corriendo en la nube, simula el guardado localmente
+                localStorage.setItem('demo_registered_email', correo);
+                localStorage.setItem('demo_registered_name', nombre);
+
                 alertContainer.innerHTML = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-wifi-off me-2"></i> <strong>Error de conexión:</strong> No se pudo establecer comunicación con el servidor de EcoPredict. Asegúrate de que el Backend esté corriendo.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> <strong>¡Registro Exitoso (Modo Demo)!</strong> Usuario simulado correctamente. Redirigiendo al Login...
                     </div>
                 `;
+                
+                document.getElementById('registroForm').reset();
+
+                // Redirige automáticamente a la pantalla de login tras 2 segundos
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
             }
         });
     </script>
