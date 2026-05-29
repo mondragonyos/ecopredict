@@ -65,7 +65,6 @@
                 });
 
                 if (respuesta.ok) {
-                    // CAMBIO AQUÍ: Obtenemos el JSON del usuario para recuperar su ID único de la DB
                     const usuarioLogueado = await respuesta.json(); 
                     localStorage.setItem('idUsuario', usuarioLogueado.idUsuario);
                     localStorage.setItem('nombreUsuario', usuarioLogueado.nombre);
@@ -75,7 +74,15 @@
                     alertContainer.innerHTML = `<div class="alert alert-danger dismissible fade show"><i class="bi bi-x-circle-fill me-2"></i>${resultado}</div>`;
                 }
             } catch (error) {
-                alertContainer.innerHTML = `<div class="alert alert-danger"><i class="bi bi-wifi-off me-2"></i> Error al conectar con el servidor.</div>`;
+                // Configuración de respaldo para visualización estática en GitHub Pages
+                localStorage.setItem('idUsuario', '1');
+                localStorage.setItem('nombreUsuario', 'Usuario EcoPredict');
+                
+                alertContainer.innerHTML = `<div class="alert alert-warning"><i class="bi bi-info-circle-fill me-2"></i> Servidor local desconectado. Entrando en modo demostración...</div>`;
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
             }
         });
     </script>
